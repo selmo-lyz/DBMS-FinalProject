@@ -3,10 +3,11 @@ UPDATE semester_course
 SET course_room = "K210"
 WHERE course_no = "A0001" AND semester = 1112
 
--- 確認
+-- 確認用的 SQL
 SELECT course_room
 FROM semester_course
 WHERE course_no == "A0001" AND semester == 1112
+
 
 -- Q2
 -- 僅計算「在學」者
@@ -15,10 +16,11 @@ FROM
     semester_course AS SC
     JOIN enroll AS E ON SC.course_no = E.cno AND SC.semester = E.sem
     JOIN student AS S ON E.sno = S.student_no
-WHERE course_no == "A0003" 
-      AND semester == 1112 
-      AND select_result IN ('中選', '人工加選') 
+WHERE course_no == "A0003"
+      AND semester == 1112
+      AND select_result IN ('中選', '人工加選')
       AND student_status = '在學'
+
 -- 另一個解答
 -- 因為此資料庫假設學生有中選才會 "takes" 該課程
 SELECT student_no, student_name
@@ -27,6 +29,7 @@ FROM
     JOIN takes AS T ON SC.course_no = T.cno AND SC.semester = T.sem
     JOIN student AS S ON T.sno = S.student_no
 WHERE course_no == "A0001" AND semester == 1112 AND student_status = '在學'
+
 
 -- Q3
 WITH
@@ -81,37 +84,61 @@ FROM
     JOIN num_stu AS NS ON CI.course_no = NS.course_no
     JOIN num_failed AS NF ON NS.course_no = NF.course_no
 
+
 -- Q4
 -- 僅計算「在學」者
 -- 學生系所 student
 -- 課程領域 semester_course takes curriulum_field
 -- 人次 semester_course takes
 -- 佔比
-SELECT
-    dept AS 學生系所,
-    field AS 課程領域,
-    COUNT(student_no) AS 人次,
-    ROUND(CAST(COUNT(student_no) AS REAL)/(COUNT(student_no) OVER (PARTITION BY dept)), 2)  AS 佔比
-FROM (
+WITH
+course_info (sno, dept, field) AS (
     SELECT
+        student_no,
         CASE WHEN S.student_dept LIKE '%研究所%'
-            THEN SUBSTR(S.student_dept, 1, INSTR(S.student_dept, '研究所')-1)||'系'
-        WHEN S.student_dept LIKE '%碩士班%'
-            THEN SUBSTR(S.student_dept, 1, INSTR(S.student_dept, '碩士班')-1)
-        ELSE SUBSTR(S.student_dept, 1, LENGTH(S.student_dept)) END 
-        AS dept,
-        curriculum_field AS field,
-        student_no
+                THEN SUBSTR(S.student_dept, 1, 
+                    INSTR(S.student_dept, '研究所')-1)||'系'
+             WHEN S.student_dept LIKE '%碩士班%'
+                THEN SUBSTR(S.student_dept, 1, 
+                    INSTR(S.student_dept, '碩士班')-1)
+        ELSE SUBSTR(S.student_dept, 1, LENGTH(S.student_dept)) END,
+        curriculum_field
     FROM
         student AS S
         JOIN takes AS T ON S.student_no = T.sno
-        JOIN semester_course AS SC ON T.cno = SC.course_no AND T.sem = SC.semester
-        JOIN curriculum_field AS CF ON SC.course_no = CF.cno
+        JOIN curriculum_field AS CF ON T.cno = CF.cno
     WHERE S.student_status = '在學'
+),
+dept_counts (dept, sum_dept) AS (
+    SELECT tmp_dept, SUM(tmp_sum_dept)
+    FROM (
+        SELECT
+            CASE WHEN S.student_dept LIKE '%研究所%'
+                    THEN SUBSTR(S.student_dept, 1,
+                        INSTR(S.student_dept, '研究所')-1)||'系'
+                 WHEN S.student_dept LIKE '%碩士班%'
+                    THEN SUBSTR(S.student_dept, 1,
+                        INSTR(S.student_dept, '碩士班')-1)
+            ELSE SUBSTR(S.student_dept, 1, LENGTH(S.student_dept)) END
+            AS tmp_dept,
+            COUNT(S.student_no) AS tmp_sum_dept
+        FROM student AS S
+        WHERE S.student_status = '在學'
+        GROUP BY S.student_dept
+    )
+    GROUP BY tmp_dept
 )
+
+SELECT
+    CI.dept AS 學生系所,
+    CI.field AS 課程領域,
+    COUNT(CI.sno) AS 人次,
+    ROUND(CAST(COUNT(CI.sno) AS REAL)/sum_dept, 2)  AS 佔比
+FROM course_info AS CI
+     JOIN dept_counts AS DC ON CI.dept = DC.dept
 GROUP BY
-    dept,
-    field
+    CI.dept,
+    CI.field
 
 -- Q5
 -- 僅計算有成績者
