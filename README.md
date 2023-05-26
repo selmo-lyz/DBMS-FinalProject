@@ -4,7 +4,7 @@ A final project for my DBMS class.
 ## 檔案結構
 
 - `Database_Design\`
-  - `Annotated_FinalProject.pdf` : 資料表欄位結構
+  - `Tables.pdf` : 資料表欄位結構
   - `DB_Schema.jpg` : 資料庫的 schema
   - `ER_Diagram.jpg` : 資料庫的 ER diagram
 - `SQL_Answer\`
