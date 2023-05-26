@@ -11,5 +11,5 @@ A final project for my DBMS class.
   - `Q1.png` ~ `Q5.png` : SQL 題目的解答 (圖片版)
   - `SQL_ans.sql` : SQL 題目的解答 (程式碼版)
 - `FinalProject.sql` : 資料庫
-- `FinalProject.ppt` : 簡報
+- `FinalProject.pdf` : 簡報
 - `from_source_data_to_tables.sql` : 將原始資料匯入資料庫的 SQL
